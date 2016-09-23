@@ -1,51 +1,122 @@
-Last login: Fri Sep 23 12:49:59 on ttys001
-Sangeethas-MacBook-Pro:~ sangeethabs$ spark
-spark@hydra.cs.vt.edu's password: 
-Warning: untrusted X11 forwarding setup failed: xauth key data not generated
-Last login: Fri Sep 23 11:46:33 2016 from 172.30.64.105
-[spark@hydra ~]$ cd RMQ
--bash: cd: RMQ: No such file or directory
-[spark@hydra ~]$ ssh lustre@hulk2
-lustre@hulk2's password: 
-Last login: Fri Sep 23 11:50:10 2016 from hydra
-[lustre@hulk2 ~]$ cd RMQ
-[lustre@hulk2 RMQ]$ cd oddmon/
-[lustre@hulk2 oddmon]$ git status
-# On branch splunk_mods
-# Changed but not updated:
-#   (use "git add <file>..." to update what will be committed)
-#   (use "git checkout -- <file>..." to discard changes in working directory)
-#
-#	modified:   monctl.py
-#	modified:   oddmon.cfg.sample
-#	modified:   oddmon/metric_plugins/metric_ost_stats.py
-#
-# Untracked files:
-#   (use "git add <file>..." to include in what will be committed)
-#
-#	LOG.aggregator
-#	oddmon.db
-#	oddmon/metric_plugins/metric_mdt_stats.py
-#	oddmon/metric_plugins/metric_oss_lnet_stats.py
-#	oddmon/metric_plugins/metric_oss_stats.py
-no changes added to commit (use "git add" and/or "git commit -a")
-[lustre@hulk2 oddmon]$ vim oddmon.cfg.sample 
-[lustre@hulk2 oddmon]$ vim oddmon/metric_plugins/metric_ost_stats.py
+#!/usr/bin/env python
+
+import os
+import ConfigParser
+import logging
+import json
+import time
+from collections import defaultdict
+try:
+    from oddmon import lfs_utils
+except:
+    import lfs_utils
+
+logger = None
 
 
+class G:
+    fsname = None
+    ostnames = None
+    stats = defaultdict(lambda: defaultdict(int))
+    save_dir = None
 
 
+def metric_init(name, config_file, is_subscriber=False,
+                loglevel=logging.DEBUG):
+    global logger, stats_logger
+    logger = logging.getLogger("app.%s" % __name__)
+    rv = True
+
+    G.fsname, G.ostnames = lfs_utils.scan_targets(OSS=True)
+    if is_subscriber is False:
+        if not G.ostnames:
+                logger.warn("No OST's found.  Disabling plugin.")
+                rv = False
+        elif not G.fsname:
+                logger.error("OST's found, but could not discern filesystem name. "
+                             "(This shouldn't happen.)  Disabling plugin.")
+                rv = False
+    else:
+        # config file is only needed for the location of the
+        # stats_logger file, and that's only needed on the
+        # subscriber side
+        config = ConfigParser.SafeConfigParser()
+        try:
+            config.read(config_file)
+            G.save_dir = config.get(name, "save_dir")
+        except Exception, e:
+            logger.error("Can't read configuration file")
+            logger.error("Exception: %s" % e)
+            rv = False
+
+        # TODO: this code block should probably be inside the exception handler
+        # log to file until reaching maxBytes then create a new log file
+        stats_logger = logging.getLogger("ost_stats.%s" % __name__)
+        stats_logger.propagate = False
+        stats_logger_name = G.save_dir+os.sep+"ost_log.txt"
+        logger.debug("Stats data saved to: %s" % stats_logger_name)
+        stats_logger.addHandler(
+            logging.handlers.RotatingFileHandler(stats_logger_name,
+                                                 maxBytes=1024*1024*1024,
+                                                 backupCount=1))
+        stats_logger.setLevel(logging.DEBUG)
+
+    return rv
 
 
+def metric_cleanup(is_subscriber=False):
+    pass
 
 
+def get_stats():
+
+    if G.fsname is None:
+        logger.error("No valid file system ... skip")
+        return ""
+
+    update()
+
+    return json.dumps(G.stats)
 
 
+def save_stats(msg):
+
+        stats = json.loads(msg)
+        stats_logger.info(stats)
 
 
+def read_ost_stats(f):
+    """
+    expect input of a path to ost stats
+    return a dictionary with key/val pairs
+    """
+    ret = {'read_bytes_sum': 0, 'write_bytes_sum': 0}
+
+    pfile = os.path.normpath(f) + "/stats"
+    with open(pfile, "r") as f:
+            for line in f:
+                chopped = line.split()
+                if chopped[0] == "snapshot_time":
+                    ret["snapshot_time"] = chopped[1]
+                if chopped[0] == "write_bytes":
+                    ret["write_bytes_sum"] = int(chopped[6])
+                if chopped[0] == "read_bytes":
+                    ret["read_bytes_sum"] = int(chopped[6])
+
+    if ret['read_bytes_sum'] == 0 and ret['write_bytes_sum'] == 0:
+        return None
+
+    return ret
 
 
+def update():
 
+    for ost in G.ostnames:
+    if G.fsname is None:
+        logger.error("No valid file system ... skip")
+        return ""
+
+    update()
 
     return json.dumps(G.stats)
 
@@ -95,4 +166,5 @@ if __name__ == '__main__':
         print get_stats()
         time.sleep(5)
     metric_cleanup()
-                                                                                                                                                                   126,9         Bot
+
+                                        
