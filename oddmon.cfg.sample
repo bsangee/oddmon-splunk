@@ -45,5 +45,7 @@ save_dir       = /tmp
 [metric_mdt_stats]
 save_dir       = /tmp
 
-# Yes, the job stats data is dumped into the BRW_Stats index
+[metric_mds_stats]
+save_dir       = /tmp
+
 
