@@ -46,7 +46,6 @@ def metric_init(name, config_file, is_subscriber=False,
             config.read(config_file)
             G.save_dir = config.get(name, "save_dir")
         except Exception, e:
-        except Exception, e:
             logger.error("Can't read configuration file")
             logger.error("Exception: %s" % e)
             rv = False
