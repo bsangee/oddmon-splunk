@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
 import os
+import ConfigParser
+import subprocess
 import logging
 import json
 import time
@@ -21,21 +23,47 @@ class G:
 
 def metric_init(name, config_file, is_subscriber=False,
                 loglevel=logging.DEBUG):
-    global logger
+    global logger, stats_logger
     logger = logging.getLogger("app.%s" % __name__)
     rv = True
-    
-    G.fsname, G.ostnames = lfs_utils.scan_targets(OSS=True)
-    if not G.ostnames:
-        logger.warn("No OST's found.  Disabling plugin.")
-        rv = False
-    elif not G.fsname:
-        logger.error("OST's found, but could not discern filesystem name. "
-                     "(This shouldn't happen.)  Disabling plugin.")
-        rv = False
-    
-    return rv
 
+    if is_subscriber is False:
+        G.fsname, G.ostnames = lfs_utils.scan_targets(OSS=True)
+        if not G.ostnames:
+                logger.warn("No OST's found.  Disabling plugin.")
+                rv = False
+        elif not G.fsname:
+                logger.error("OST's found, but could not discern filesystem name. "
+                             "(This shouldn't happen.)  Disabling plugin.")
+                rv = False
+
+    else:
+        # config file is only needed for the location of the
+        # stats_logger file, and that's only needed on the
+        # subscriber side
+        config = ConfigParser.SafeConfigParser()
+        try:
+            config.read(config_file)
+            G.save_dir = config.get(name, "save_dir")
+        except Exception, e:
+        except Exception, e:
+            logger.error("Can't read configuration file")
+            logger.error("Exception: %s" % e)
+            rv = False
+
+        # TODO: this code block should probably be inside the exception handler
+        # log to file until reaching maxBytes then create a new log file
+        stats_logger = logging.getLogger("oss_stats.%s" % __name__)
+        stats_logger.propagate = False
+        stats_logger_name = G.save_dir+os.sep+"oss_stats_log.txt"
+        logger.debug("Stats data saved to: %s" % stats_logger_name)
+        stats_logger.addHandler(
+            logging.handlers.RotatingFileHandler(stats_logger_name,
+                                                 maxBytes=1024*1024*1024,
+                                                 backupCount=1))
+        stats_logger.setLevel(logging.DEBUG)
+
+    return rv
 
 def metric_cleanup(is_subscriber=False):
     pass
@@ -55,18 +83,20 @@ def get_stats():
 def save_stats(msg):
     stats = json.loads(msg)
 
-    for target in stats.keys():
-        jobList = stats[target]
-        for job in jobList:
+    #for job in stats:
             # convert the python structure into an event string suitable
             # for Splunk and write it out
-                event_str = "cpu=%f  mem=%d OSS=%s" %\
-                            (float(job["cpu"]), int(job["mem"]), str(target))
+                #event_str = "cpu  mem OSS" #%\
+     #           event_str = "cpu=%f  mem=%d OSS=%s" %\
+      #                      (float(job["cpu"]), int(job["mem"]), str(target))
 
-		stats_logger.info(event_str)
+    event_str = "snapshot: %d" % int(time.time())
+    stats_logger.info(event_str)
+
+    stats_logger.info(stats)
 
 
-def read_oss_stats(f):
+def read_oss_stats():
     ret = {'cpu': 0, 'mem': 0}
     count=1
     cmd = subprocess.Popen('sar 1 1 -r -u', shell=True, stdout=subprocess.PIPE)
@@ -77,8 +107,6 @@ def read_oss_stats(f):
                 if chopped and count == 13:
                    ret['mem'] = chopped[3];
                 count = count+1;
-
-
     return ret
 
 
