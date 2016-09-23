@@ -83,50 +83,6 @@ def save_stats(msg):
 
         stats = json.loads(msg)
         stats_logger.info(stats)
-
-
-def read_ost_stats(f):
-    """
-    expect input of a path to ost stats
-    return a dictionary with key/val pairs
-    """
-    ret = {'read_bytes_sum': 0, 'write_bytes_sum': 0}
-
-    pfile = os.path.normpath(f) + "/stats"
-    with open(pfile, "r") as f:
-            for line in f:
-                chopped = line.split()
-                if chopped[0] == "snapshot_time":
-                    ret["snapshot_time"] = chopped[1]
-                if chopped[0] == "write_bytes":
-                    ret["write_bytes_sum"] = int(chopped[6])
-                if chopped[0] == "read_bytes":
-                    ret["read_bytes_sum"] = int(chopped[6])
-
-    if ret['read_bytes_sum'] == 0 and ret['write_bytes_sum'] == 0:
-        return None
-
-    return ret
-
-
-def update():
-
-    for ost in G.ostnames:
-    if G.fsname is None:
-        logger.error("No valid file system ... skip")
-        return ""
-
-    update()
-
-    return json.dumps(G.stats)
-
-
-def save_stats(msg):
-
-        stats = json.loads(msg)
-        stats_logger.info(stats)
-
-
 def read_ost_stats(f):
     """
     expect input of a path to ost stats
@@ -166,5 +122,3 @@ if __name__ == '__main__':
         print get_stats()
         time.sleep(5)
     metric_cleanup()
-
-                                        
