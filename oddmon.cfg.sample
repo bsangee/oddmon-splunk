@@ -32,5 +32,18 @@ save_dir       = /tmp
 
 save_dir       = /tmp
 #save_dir       = /data/splunk/BRW_Stats
+
+[metric_oss_stats]
+save_dir       = /tmp
+
+[metric_ost_stats]
+save_dir       = /tmp
+
+[metric_oss_lnet_stats]
+save_dir       = /tmp
+
+[metric_mdt_stats]
+save_dir       = /tmp
+
 # Yes, the job stats data is dumped into the BRW_Stats index
 
