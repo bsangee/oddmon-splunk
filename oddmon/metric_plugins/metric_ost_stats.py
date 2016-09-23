@@ -1,72 +1,59 @@
-#!/usr/bin/env python
-
-import os
-import logging
-import json
-import time
-from collections import defaultdict
-try:
-    from oddmon import lfs_utils
-except:
-    import lfs_utils
-
-logger = None
-
-
-class G:
-    fsname = None
-    ostnames = None
-    stats = defaultdict(lambda: defaultdict(int))
-
-
-def metric_init(name, config_file, is_subscriber=False,
-                loglevel=logging.DEBUG):
-    global logger
-    logger = logging.getLogger("app.%s" % __name__)
-    rv = True
-    
-    G.fsname, G.ostnames = lfs_utils.scan_targets(OSS=True)
-    if not G.ostnames:
-        logger.warn("No OST's found.  Disabling plugin.")
-        rv = False
-    elif not G.fsname:
-        logger.error("OST's found, but could not discern filesystem name. "
-                     "(This shouldn't happen.)  Disabling plugin.")
-        rv = False
-    
-    return rv
+Last login: Fri Sep 23 12:49:59 on ttys001
+Sangeethas-MacBook-Pro:~ sangeethabs$ spark
+spark@hydra.cs.vt.edu's password: 
+Warning: untrusted X11 forwarding setup failed: xauth key data not generated
+Last login: Fri Sep 23 11:46:33 2016 from 172.30.64.105
+[spark@hydra ~]$ cd RMQ
+-bash: cd: RMQ: No such file or directory
+[spark@hydra ~]$ ssh lustre@hulk2
+lustre@hulk2's password: 
+Last login: Fri Sep 23 11:50:10 2016 from hydra
+[lustre@hulk2 ~]$ cd RMQ
+[lustre@hulk2 RMQ]$ cd oddmon/
+[lustre@hulk2 oddmon]$ git status
+# On branch splunk_mods
+# Changed but not updated:
+#   (use "git add <file>..." to update what will be committed)
+#   (use "git checkout -- <file>..." to discard changes in working directory)
+#
+#	modified:   monctl.py
+#	modified:   oddmon.cfg.sample
+#	modified:   oddmon/metric_plugins/metric_ost_stats.py
+#
+# Untracked files:
+#   (use "git add <file>..." to include in what will be committed)
+#
+#	LOG.aggregator
+#	oddmon.db
+#	oddmon/metric_plugins/metric_mdt_stats.py
+#	oddmon/metric_plugins/metric_oss_lnet_stats.py
+#	oddmon/metric_plugins/metric_oss_stats.py
+no changes added to commit (use "git add" and/or "git commit -a")
+[lustre@hulk2 oddmon]$ vim oddmon.cfg.sample 
+[lustre@hulk2 oddmon]$ vim oddmon/metric_plugins/metric_ost_stats.py
 
 
-def metric_cleanup(is_subscriber=False):
-    pass
 
 
-def get_stats():
 
-    if G.fsname is None:
-        logger.error("No valid file system ... skip")
-        return ""
 
-    update()
+
+
+
+
+
+
+
+
+
 
     return json.dumps(G.stats)
 
 
 def save_stats(msg):
-    stats = json.loads(msg)
 
-    for target in stats.keys():
-        jobList = stats[target]
-        for job in jobList:
-            # convert the python structure into an event string suitable
-            # for Splunk and write it out
-		event_str = "ts=%d write_bytes=%s read_bytes=%d " %\
-                            (int(job["snapshot_time"]), str(job["write_bytes_sum"]),
-                             int(job["read_bytes_sum"]))
-                event_str += "kbytes_avail=%d OSS=%s" %\
-                             (int(job["kbytes_avail"]), str(target))
-                stats_logger.info(event_str)
-
+        stats = json.loads(msg)
+        stats_logger.info(stats)
 
 
 def read_ost_stats(f):
@@ -75,7 +62,7 @@ def read_ost_stats(f):
     return a dictionary with key/val pairs
     """
     ret = {'read_bytes_sum': 0, 'write_bytes_sum': 0}
-    f1 = f	
+
     pfile = os.path.normpath(f) + "/stats"
     with open(pfile, "r") as f:
             for line in f:
@@ -86,12 +73,6 @@ def read_ost_stats(f):
                     ret["write_bytes_sum"] = int(chopped[6])
                 if chopped[0] == "read_bytes":
                     ret["read_bytes_sum"] = int(chopped[6])
-
-    pfile = os.path.normpath(f1) + "/kbytesavail"
-    with open(pfile, "r") as f1:
-	    for line in f1:
-			ret["kbytes_avail"] = int(line)	
-    
 
     if ret['read_bytes_sum'] == 0 and ret['write_bytes_sum'] == 0:
         return None
@@ -114,3 +95,4 @@ if __name__ == '__main__':
         print get_stats()
         time.sleep(5)
     metric_cleanup()
+                                                                                                                                                                   126,9         Bot
