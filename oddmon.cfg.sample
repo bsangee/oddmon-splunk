@@ -49,3 +49,8 @@ save_dir       = /tmp
 save_dir       = /tmp
 
 
+
+[metric_mds_lnet_stats]
+save_dir       = /tmp
+
+
