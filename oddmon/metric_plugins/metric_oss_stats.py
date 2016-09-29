@@ -81,19 +81,9 @@ def get_stats():
 
 def save_stats(msg):
     stats = json.loads(msg)
-
-    #for job in stats:
-            # convert the python structure into an event string suitable
-            # for Splunk and write it out
-                #event_str = "cpu  mem OSS" #%\
-     #           event_str = "cpu=%f  mem=%d OSS=%s" %\
-      #                      (float(job["cpu"]), int(job["mem"]), str(target))
-
-    event_str = "snapshot: %d" % int(time.time())
+    event_str = "cpu=%f  mem=%f snapshot=%d" %\
+                 (float(stats["cpu"]), float(stats["mem"]) ,int(time.time()))
     stats_logger.info(event_str)
-
-    stats_logger.info(stats)
-
 
 def read_oss_stats():
     ret = {'cpu': 0, 'mem': 0}
