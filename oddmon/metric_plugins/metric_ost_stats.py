@@ -81,18 +81,32 @@ def get_stats():
 
 def save_stats(msg):
 
+
         stats = json.loads(msg)
         stats_logger.info(stats)
+        for target in stats.keys():
+                jobList = stats[target]
+                # convert the python structure into an event string suitable
+                # for Splunk and write it out
+                event_str = "ts=%f write_bytes=%f read_bytes=%f " %\
+                                    (float(jobList["snapshot_time"]), float(jobList["write_bytes_sum"]),
+                                        float(jobList["read_bytes_sum"]))
+                event_str += "kbytes_avail=%d OSS=%s" %\
+                                     (int(jobList["kbytes_avail"]), str(target))
+                stats_logger.info(event_str)
+
+
+
 def read_ost_stats(f):
     """
     expect input of a path to ost stats
     return a dictionary with key/val pairs
     """
     ret = {'read_bytes_sum': 0, 'write_bytes_sum': 0}
-
+    f1 = f
     pfile = os.path.normpath(f) + "/stats"
     with open(pfile, "r") as f:
-            for line in f:
+             for line in f:
                 chopped = line.split()
                 if chopped[0] == "snapshot_time":
                     ret["snapshot_time"] = chopped[1]
@@ -101,10 +115,17 @@ def read_ost_stats(f):
                 if chopped[0] == "read_bytes":
                     ret["read_bytes_sum"] = int(chopped[6])
 
+    pfile = os.path.normpath(f1) + "/kbytesavail"
+    with open(pfile, "r") as f1:
+             for line in f1:
+                        ret["kbytes_avail"] = int(line)
+
     if ret['read_bytes_sum'] == 0 and ret['write_bytes_sum'] == 0:
         return None
 
     return ret
+
+
 
 
 def update():
