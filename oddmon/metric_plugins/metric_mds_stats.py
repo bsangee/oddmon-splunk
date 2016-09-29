@@ -78,12 +78,9 @@ def get_stats():
 
 def save_stats(msg):
     stats = json.loads(msg)
-
-    event_str = "snapshot: %d" % int(time.time())
+    event_str = "cpu=%f  mem=%f snapshot=%d" %\
+                 (float(stats["cpu"]), float(stats["mem"]) ,int(time.time()))
     stats_logger.info(event_str)
-
-    stats_logger.info(stats)
-
 
 def read_mds_stats(f):
     ret = {'cpu': 0, 'mem': 0}
