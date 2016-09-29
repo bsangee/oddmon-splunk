@@ -78,10 +78,12 @@ def get_stats():
 
 def save_stats(msg):
     stats = json.loads(msg)
-    event_str = "snapshot: %d" % int(time.time())
+
+    event_str = "send_count=%f  send_length=%f recv_length=%f recv_count=%f snapshot=%d" %\
+                 (float(stats["send_count"]), float(stats["send_length"]) ,float(stats["recv_length"]), float(stats["recv_count"]), int(time.time()))
     stats_logger.info(event_str)
 
-    stats_logger.info(stats)
+
 
 
 def read_lnet_stats(f):
