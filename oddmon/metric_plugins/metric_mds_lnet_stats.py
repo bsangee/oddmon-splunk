@@ -26,7 +26,7 @@ def metric_init(name, config_file, is_subscriber=True,
     logger = logging.getLogger("app.%s" % __name__)
     rv = True
 
-    if is_subscriber is True:
+    if is_subscriber is False:
         G.fsname, G.mdtnames = lfs_utils.scan_targets(OSS=False)
         if not G.mdtnames:
                 logger.warn("No MDT's found.  Disabling plugin.")
@@ -35,6 +35,7 @@ def metric_init(name, config_file, is_subscriber=True,
                 logger.error("MDT's found, but could not discern filesystem name. "
                              "(This shouldn't happen.)  Disabling plugin.")
                 rv = False
+    else:            
         # config file is only needed for the location of the
         # stats_logger file, and that's only needed on the
         # subscriber side
