@@ -81,10 +81,16 @@ def get_stats():
 
 def save_stats(msg):
     stats = json.loads(msg)
-    event_str = "snapshot: %d" % int(time.time())
-    stats_logger.info(event_str)
+    for target in stats.keys():
+                jobList = stats[target]
+            # convert the python structure into an event string suitable
+            # for Splunk and write it out
+            # Note that the formats for the OST's and MDT's differ
+                        #if 'mknod:' in job:  # Is this an MDT record?
+                event_str = "ts=%d" % (int(jobList["snapshot_time"]))
 
-    stats_logger.info(stats)
+                stats_logger.info(event_str)
+
 
 
 def read_mdt_stats(f):
