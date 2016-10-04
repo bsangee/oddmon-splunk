@@ -2,6 +2,7 @@
 
 import os
 import logging
+import subprocess
 import ConfigParser
 import json
 import time
@@ -83,7 +84,7 @@ def save_stats(msg):
                  (float(stats["cpu"]), float(stats["mem"]) ,int(time.time()))
     stats_logger.info(event_str)
 
-def read_mds_stats(f):
+def read_mds_stats():
     ret = {'cpu': 0, 'mem': 0}
     count=1
     cmd = subprocess.Popen('sar 1 1 -r -u', shell=True, stdout=subprocess.PIPE)
