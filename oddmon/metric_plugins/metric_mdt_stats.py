@@ -105,6 +105,8 @@ def read_mdt_stats(f):
                     ret["getxattr"] = int(chopped[1])
                 if chopped[0] == "statfs":
                     ret["statfs"] = int(chopped[1])
+                if chopped[0] == "snapshot_time":
+                    ret["snapshot_time"] = float(chopped[1])    
 
 
     return ret
