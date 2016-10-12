@@ -88,17 +88,23 @@ def save_stats(msg):
 def read_oss_stats():
     ret = {'cpu': 0, 'mem': 0}
     count=1
-    cmd = subprocess.Popen('sar 1 1 -r -u', shell=True, stdout=subprocess.PIPE)
-    for line in cmd.stdout:
+    pfile = "/proc/meminfo"
+    with open(pfile,"r") as f:
+        for line in f:
                 chopped = line.split()
-                if chopped and count == 10:
-                   ret['cpu'] = 100 - float(chopped[-1]);  #idle cpu
-                if chopped and count == 13:
-                   ret['mem'] = chopped[3];
-                count = count+1;
+                if chopped[0] == "MemTotal:" :
+                        mem_tot = float( chopped[1])
+                if chopped[0] == "MemFree:" :
+                        mem_free = float( chopped[1])
+
+    ret["mem"] = ((mem_tot - mem_free) * 100)/ mem_tot
+    pfile = "/proc/loadavg"
+    with open(pfile,"r") as f:
+        for line in f:
+                chopped = line.split()
+                if chopped[0]:
+                        ret["cpu_avg"] = chopped[0]
     return ret
-
-
 
 def update():
 
